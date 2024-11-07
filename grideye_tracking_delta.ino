@@ -8,13 +8,13 @@
 //GridEYE Parameters
 GridEYE grideye;      //Initializes sensor
 float tempArray[64];  //Float array to store 64 pixels (since GridEye outputs 8x8 grid). Switch to int type if you want to remove decimal points.
-float minTemp = 20; //Setting average room temperature as minTemp
+
 
 //Servo Parameters
 Servo myservo;
 int pos = 90;
 const int servoPin = 2;   //Pin for Servo PWM
-int minServoAngle = 0;    // Minimum servo angle
+int minServoAngle = 5;    // Minimum servo angle
 int maxServoAngle = 180;  // Maximum servo angle
 
 
@@ -39,7 +39,7 @@ void setup() {
   ESP32PWM::allocateTimer(2);
   ESP32PWM::allocateTimer(3);
   myservo.setPeriodHertz(50);  // standard 50 hz servo
-  myservo.attach(servoPin, 564, 2400); //default values almost (0-180), little more added on 0 side to prevent current draw
+  myservo.attach(servoPin, 544, 2400); //default values almost (0-180), little more added on 0 side to prevent current draw
 
 
   //PID Variables
@@ -49,6 +49,7 @@ void setup() {
   last_time = 0;
 
 
+  float minTemp = 20; //Setting average room temperature as minTemp
   for (int i = 0; i < 64; i++) {                    //Loop that goes through each pixel and assigns it to the temperature array
     tempArray[i] = grideye.getPixelTemperature(i);
     if (tempArray[i] < minTemp) {
