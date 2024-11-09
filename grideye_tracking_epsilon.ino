@@ -14,11 +14,11 @@ float tempArray[64];  //Float array to store 64 pixels (since GridEye outputs 8x
 Servo track_servo, x_servo, y_servo;
 int pos = 90;
 int xServoPos = 90;
-int yServoPos = 90; 
-const int servoPin = 2;   //Pin for Servo PWM
-const int xServoPin = 
+int yServoPos = 90;
+const int servoPin = 2;  //Pin for Servo PWM
+//const int xServoPin = ?;
 //const int yServoPin = ?
-int minServoAngle = 5;    // Minimum servo angle
+int minServoAngle = 5;  // Minimum servo angle
 int maxServoAngle = 180;  // Maximum servo angle
 
 
@@ -30,10 +30,10 @@ double setpoint = 4.5;  //Desired center value
 double deadband = 0.1;  //Deadband to prevent micro-movements
 
 
-//Buttons
-const int numDirectionButtons = 4;
-const int directionPins[numDirectionButtons] = {34, 33, 35, 39};
-bool directionButtonStates[numDirectionButtons];
+//Buttons / Switches
+const int directionPins[4] = { 34, 33, 35, 39 };
+bool directionStates[4];  //Array to store button states
+//const int togglepin = x;
 
 
 void setup() {
@@ -47,9 +47,9 @@ void setup() {
   ESP32PWM::allocateTimer(0);
   ESP32PWM::allocateTimer(1);
   ESP32PWM::allocateTimer(2);
-  ESP32PWM::allocateTimer(3); //Allow allocation of all timers
-  track_servo.setPeriodHertz(50);  // standard 50 hz servo
-  track_servo.attach(servoPin, 544, 2400); //default values almost (0-180), little more added on 0 side to prevent current draw
+  ESP32PWM::allocateTimer(3);               //Allow allocation of all timers
+  track_servo.setPeriodHertz(50);           // standard 50 hz servo
+  track_servo.attach(servoPin, 544, 2400);  //default values almost (0-180), little more added on 0 side to prevent current draw
 
   x_servo.setPeriodHertz(50);
   x_servo.attach(xServoPin, 544, 2400);
@@ -66,37 +66,39 @@ void setup() {
 
 
   //Servo Button setup
-  for (int i = 0; i < numButtons; i++) {
-    pinMode(buttonPins[i], INPUT); // Set each button pin as an input
+  for (int i = 0; i < 4; i++) {
+    pinMode(directionPins[i], INPUT);  // Set each button pin as an input
   }
 
+
   //Mintemp setup
-  float minTemp = 20; //Setting average room temperature as minTemp
-  for (int i = 0; i < 64; i++) {                    //Loop that goes through each pixel and assigns it to the temperature array
+  float minTemp = 20;             //Setting average room temperature as minTemp
+  for (int i = 0; i < 64; i++) {  //Loop that goes through each pixel and assigns it to the temperature array
     tempArray[i] = grideye.getPixelTemperature(i);
     if (tempArray[i] < minTemp) {
-        minTemp = tempArray[i];  // Update minTemp with the new lowest temperature
+      minTemp = tempArray[i];  // Update minTemp with the new lowest temperature
     }
   }
-  minTemp = constrain(minTemp, 15, 25); //Constraints set up incase of glitches / unwanted temperature readings
+  minTemp = constrain(minTemp, 15, 25);  //Constraints set up incase of glitches / unwanted temperature readings
+
 }
 
 
 void loop() {
 
-  for (int i = 0; i < numButtons; i++) {
-    buttonStates[i] = digitalRead(buttonPins[i]); // Read each button state
-    if (buttonStates[i] == LOW) {                 // If button is LOW
-      runFunction(i);   
+//read toggle switch -> if in automatic, go to temperature reading lines
+  bool isAutomaticMode = digitalRead(toggleSwitch) == HIGH;
+
+  if (isAutomaticMode) {
+    //grideye reading loop
+  } else {
+    for (int i = 0; i < 4; i++) {
+    directionStates[i] = digitalRead(directionPins[i]);  // Read each button state
+    if (directionStates[i] == LOW) {                     // If button is LOW
+      directionFunction(i);
+    }
     }
   }
-
-
-
-
-
-
-
 
 
   float totalTemp = 0;
@@ -133,7 +135,7 @@ void loop() {
   output = pid(error);                                 //Goes to PID function to calculate error output
   pos += output;                                       //Calculates position for servo using 90 (middle) + error output
   pos = constrain(pos, minServoAngle, maxServoAngle);  //Constrains position variable between 0 and 180
-  track_servo.write(pos);                                  //Writes position to servo
+  track_servo.write(pos);                              //Writes position to servo
 
   //debugFunction(centerX, error, output, pos, dt, current_time);
 
@@ -164,18 +166,38 @@ double pid(double error) {
 }
 
 
+//Direction Button Function
+void directionFunction(int directionIndex) {
+  switch (directionIndex) {
+    case 0:
+      //
+      break;
+    case 1:
+      //
+      break;
+    case 2:
+      Serial.print("Left ON");
+      break;
+    case 3:
+      Serial.print("Right ON");
+      break;
+  }
+}
+
+
+
 //Print GridEYE Data Function
 void tempPrintFunction(int i) {
-  Serial.print(tempArray[i]); //Prints data from temperature array
-  Serial.print(" "); //Prints blank space between values to make them easier to read
+  Serial.print(tempArray[i]);  //Prints data from temperature array
+  Serial.print(" ");           //Prints blank space between values to make them easier to read
 
   if ((i + 1) % 8 == 0) {  //If the ith iteration + 1 is divisible by 8, run code in the loop
-      Serial.println(); //Start a new line (Since i goes up to 64, makes 8x8 grid of data in monitor)
+    Serial.println();      //Start a new line (Since i goes up to 64, makes 8x8 grid of data in monitor)
   }
 
-  if ((i + 1) == 64) {
-      Serial.println(); //Prints empty lines in serial monitor to make each dataset visually distinct
-      Serial.println();
+  if ((i + 1) ==  64) {
+    Serial.println();  //Prints empty lines in serial monitor to make each dataset visually distinct
+    Serial.println();
   }
 }
 
@@ -183,9 +205,12 @@ void tempPrintFunction(int i) {
 //PID Error Debug Function
 void pidPrintFunction(double proportional, double integral, double derivative) {
   Serial.println("------ PID Components ------");
-  Serial.print("Proportional: "); Serial.println(proportional);
-  Serial.print("Integral: ");     Serial.println(integral);
-  Serial.print("Derivative: ");   Serial.println(derivative);
+  Serial.print("Proportional: ");
+  Serial.println(proportional);
+  Serial.print("Integral: ");
+  Serial.println(integral);
+  Serial.print("Derivative: ");
+  Serial.println(derivative);
   Serial.println("---------------------------\n");
 }
 
@@ -193,13 +218,16 @@ void pidPrintFunction(double proportional, double integral, double derivative) {
 //General Debug Info Function
 void debugFunction(float centerX, double error, double output, int pos, double dt, double current_time) {
   Serial.println("------ Debug Info ------");
-  Serial.print("Center X: "); Serial.println(centerX);
-  Serial.print("Error: ");    Serial.println(error);
-  Serial.print("Output: ");   Serial.println(output);
-  Serial.print("Pos: ");      Serial.println(pos);
-  Serial.print("DT: ");       Serial.println(dt);
+  Serial.print("Center X: ");
+  Serial.println(centerX);
+  Serial.print("Error: ");
+  Serial.println(error);
+  Serial.print("Output: ");
+  Serial.println(output);
+  Serial.print("Pos: ");
+  Serial.println(pos);
+  Serial.print("DT: ");
+  Serial.println(dt);
   Serial.println("------------------------\n");
 }
-
-
 
