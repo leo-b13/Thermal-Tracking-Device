@@ -13,8 +13,8 @@ float tempArray[64];  //Float array to store 64 pixels (since GridEye outputs 8x
 //Servo Parameters
 Servo track_servo, x_servo, y_servo;
 int pos = 90;
-int xServoPos = 90;
-int yServoPos = 90;
+int xPos = 90;
+int yPos = 90;
 const int servoPin = 2;  //Pin for Servo PWM
 //const int xServoPin = ?;
 //const int yServoPin = ?
@@ -33,7 +33,7 @@ double deadband = 0.1;  //Deadband to prevent micro-movements
 //Buttons / Switches
 const int directionPins[4] = { 34, 33, 35, 39 };
 bool directionStates[4];  //Array to store button states
-//const int togglepin = x;
+//const int togglePin = x;
 
 
 void setup() {
@@ -87,7 +87,7 @@ void setup() {
 void loop() {
 
 //read toggle switch -> if in automatic, go to temperature reading lines
-  bool isAutomaticMode = digitalRead(toggleSwitch) == HIGH;
+  bool isAutomaticMode = digitalRead(togglePin) == HIGH;
 
   if (isAutomaticMode) {
     //grideye reading loop
@@ -177,9 +177,15 @@ void directionFunction(int directionIndex) {
       break;
     case 2:
       Serial.print("Left ON");
+      xPos += 5;
+      xPos = constrain(xPos, minServoAngle, maxServoAngle);  
+      x_servo.write(xPos); 
       break;
     case 3:
       Serial.print("Right ON");
+      xPos -= 5;
+      xPos = constrain(xPos, minServoAngle, maxServoAngle);  
+      x_servo.write(xPos);      
       break;
   }
 }
@@ -230,4 +236,3 @@ void debugFunction(float centerX, double error, double output, int pos, double d
   Serial.println(dt);
   Serial.println("------------------------\n");
 }
-
