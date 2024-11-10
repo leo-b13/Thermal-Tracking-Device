@@ -8,6 +8,7 @@
 //GridEYE Parameters
 GridEYE grideye;      //Initializes sensor
 float tempArray[64];  //Float array to store 64 pixels (since GridEye outputs 8x8 grid). Switch to int type if you want to remove decimal points.
+float minTemp = 20;   //Setting average room temperature as minTemp, for use in setup later
 
 
 //Servo Parameters
@@ -16,8 +17,8 @@ int pos = 90;
 int xPos = 90;
 int yPos = 90;
 const int servoPin = 2;  //Pin for Servo PWM
-//const int xServoPin = ?;
-//const int yServoPin = ?
+const int xServoPin = 100;
+const int yServoPin = 100;
 int minServoAngle = 5;  // Minimum servo angle
 int maxServoAngle = 180;  // Maximum servo angle
 
@@ -33,7 +34,7 @@ double deadband = 0.1;  //Deadband to prevent micro-movements
 //Buttons / Switches
 const int directionPins[4] = { 34, 33, 35, 39 };
 bool directionStates[4];  //Array to store button states
-//const int togglePin = x;
+const int togglePin = 100;
 
 
 void setup() {
@@ -72,7 +73,6 @@ void setup() {
 
 
   //Mintemp setup
-  float minTemp = 20;             //Setting average room temperature as minTemp
   for (int i = 0; i < 64; i++) {  //Loop that goes through each pixel and assigns it to the temperature array
     tempArray[i] = grideye.getPixelTemperature(i);
     if (tempArray[i] < minTemp) {
@@ -90,7 +90,7 @@ void loop() {
   bool isAutomaticMode = digitalRead(togglePin) == HIGH;
 
   if (isAutomaticMode) {
-    //grideye reading loop
+    gridEyeFunction();
   } else {
     for (int i = 0; i < 4; i++) {
     directionStates[i] = digitalRead(directionPins[i]);  // Read each button state
@@ -100,7 +100,12 @@ void loop() {
     }
   }
 
+  delay(100);
+}
 
+
+//GridEYE Measurements Function
+void gridEyeFunction() {
   float totalTemp = 0;
   float tempX = 0;
   float tempY = 0;  //Resets temperature variables, placed before loop to initialize before new data gathered
@@ -125,7 +130,7 @@ void loop() {
 
 
   //Change in T calculation (for integral)
-  double current_time = millis();             //Returns the number of milliseconds passed since the Arduino board began running the current program
+  unsigned long current_time = millis();             //Returns the number of milliseconds passed since the Arduino board began running the current program
   dt = (current_time - last_time) / 1000.00;  //Calculates change in time in seconds
   last_time = current_time;                   //Sets previous time for next iteration
 
@@ -138,9 +143,8 @@ void loop() {
   track_servo.write(pos);                              //Writes position to servo
 
   //debugFunction(centerX, error, output, pos, dt, current_time);
-
-  delay(100);
 }
+
 
 
 //PID Error Function
@@ -222,7 +226,7 @@ void pidPrintFunction(double proportional, double integral, double derivative) {
 
 
 //General Debug Info Function
-void debugFunction(float centerX, double error, double output, int pos, double dt, double current_time) {
+void debugFunction(float centerX, double error, double output, int pos, long dt, unsigned long current_time) {
   Serial.println("------ Debug Info ------");
   Serial.print("Center X: ");
   Serial.println(centerX);
