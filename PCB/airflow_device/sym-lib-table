@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "esp32-wemos-d1-mini")(type "KiCad")(uri "C:/Users/Adam/Downloads/kicad-esp32-wemos-d1-mini-master/kicad-esp32-wemos-d1-mini-master/esp32-wemos-d1-mini.kicad_sym")(options "")(descr ""))
+)
