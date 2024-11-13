@@ -8,17 +8,14 @@
 //GridEYE Parameters
 GridEYE grideye;      //Initializes sensor
 float tempArray[64];  //Float array to store 64 pixels (since GridEye outputs 8x8 grid). Switch to int type if you want to remove decimal points.
-float minTemp = 20;   //Setting average room temperature as minTemp, for use in setup later
-
+float minTemp = 20; //Min temperature expected, changed by function later on
 
 //Servo Parameters
-Servo track_servo, x_servo, y_servo;
+Servo track_servo, x_servo;
 int pos = 90;
 int xPos = 90;
-int yPos = 90;
 const int servoPin = 2;  //Pin for Servo PWM
 const int xServoPin = 100;
-const int yServoPin = 100;
 int minServoAngle = 5;  // Minimum servo angle
 int maxServoAngle = 180;  // Maximum servo angle
 
@@ -55,9 +52,6 @@ void setup() {
   x_servo.setPeriodHertz(50);
   x_servo.attach(xServoPin, 544, 2400);
 
-  //y_servo.setPeriodHertz(50);
-  //y_servo.attach(yServoPin, 544, 2400);
-
 
   //PID Variables
   Kp = 5;
@@ -70,17 +64,6 @@ void setup() {
   for (int i = 0; i < 4; i++) {
     pinMode(directionPins[i], INPUT);  // Set each button pin as an input
   }
-
-
-  //Mintemp setup
-  for (int i = 0; i < 64; i++) {  //Loop that goes through each pixel and assigns it to the temperature array
-    tempArray[i] = grideye.getPixelTemperature(i);
-    if (tempArray[i] < minTemp) {
-      minTemp = tempArray[i];  // Update minTemp with the new lowest temperature
-    }
-  }
-  minTemp = constrain(minTemp, 15, 25);  //Constraints set up incase of glitches / unwanted temperature readings
-
 }
 
 
@@ -90,13 +73,25 @@ void loop() {
   bool isAutomaticMode = digitalRead(togglePin) == HIGH;
 
   if (isAutomaticMode) {
-    gridEyeFunction();
+    TrackingFunc();
   } else {
     for (int i = 0; i < 4; i++) {
     directionStates[i] = digitalRead(directionPins[i]);  // Read each button state
     if (directionStates[i] == LOW) {                     // If button is LOW
-      directionFunction(i);
-    }
+        switch (i) {
+          case 0:
+            Serial.print("Left ON");
+            xPos += 5;
+            xPos = constrain(xPos, minServoAngle, maxServoAngle);  
+            x_servo.write(xPos); 
+            break;
+          case 1:
+            Serial.print("Right ON");
+            xPos -= 5;
+            xPos = constrain(xPos, minServoAngle, maxServoAngle);  
+            x_servo.write(xPos);      
+            break;
+        } 
     }
   }
 
@@ -104,8 +99,13 @@ void loop() {
 }
 
 
-//GridEYE Measurements Function
-void gridEyeFunction() {
+//GridEYE Tracking Function
+void TrackingFunc() {
+
+  minTemp = minFunc();
+  Serial.print("Min temp:");
+  Serial.println(minTemp);
+
   float totalTemp = 0;
   float tempX = 0;
   float tempY = 0;  //Resets temperature variables, placed before loop to initialize before new data gathered
@@ -146,6 +146,28 @@ void gridEyeFunction() {
 }
 
 
+//GridEYE Searching Function
+//void searchFunc() {
+
+  //for (int i = 0; i < 64; i++) {                    //Loop that goes through each pixel and assigns it to the temperature array
+   // tempArray[i] = grideye.getPixelTemperature(i); 
+
+  //once ambien temp done
+  //move to max right angle while scanning
+  //once hit, move to max left angle while scanning
+  //at any time, if temp detected that is ~ >5 degrees ambient, stop function
+  //for (int i = 0; i < 64; i++) {                  
+    //tempArray[i] = grideye.getPixelTemperature(i);
+    //if (tempArray[i] - minTemp) > tempThreshold
+      //Serial.println("Person detected! Switching to tracking mode...");
+      //might need to stop current pos?
+      //break;
+  //}
+
+
+
+//}
+
 
 //PID Error Function
 double pid(double error) {
@@ -170,30 +192,19 @@ double pid(double error) {
 }
 
 
-//Direction Button Function
-void directionFunction(int directionIndex) {
-  switch (directionIndex) {
-    case 0:
-      //
-      break;
-    case 1:
-      //
-      break;
-    case 2:
-      Serial.print("Left ON");
-      xPos += 5;
-      xPos = constrain(xPos, minServoAngle, maxServoAngle);  
-      x_servo.write(xPos); 
-      break;
-    case 3:
-      Serial.print("Right ON");
-      xPos -= 5;
-      xPos = constrain(xPos, minServoAngle, maxServoAngle);  
-      x_servo.write(xPos);      
-      break;
+//Mintemp setup
+float minFunc() {
+  float minTemp = 20;
+  for (int i = 0; i < 64; i++) {  //Loop that goes through each pixel and assigns it to the temperature array
+    tempArray[i] = grideye.getPixelTemperature(i);
+    if (tempArray[i] < minTemp) {
+      minTemp = tempArray[i];  // Update minTemp with the new lowest temperature
+    }
   }
-}
+  minTemp = constrain(minTemp, 15, 20);  //Constraints set up incase of glitches / unwanted temperature readings
 
+  return minTemp;
+}
 
 
 //Print GridEYE Data Function
