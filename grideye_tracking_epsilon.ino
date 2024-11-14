@@ -11,11 +11,12 @@ float tempArray[64];  //Float array to store 64 pixels (since GridEye outputs 8x
 float minTemp = 20; //Min temperature expected, changed by function later on
 
 //Servo Parameters
-Servo track_servo, x_servo;
+Servo track_servo;
+Servo x_servo;
 int pos = 90;
 int xPos = 90;
 const int servoPin = 2;  //Pin for Servo PWM
-const int xServoPin = 100;
+const int xServoPin = 4;  
 int minServoAngle = 5;  // Minimum servo angle
 int maxServoAngle = 180;  // Maximum servo angle
 
@@ -29,9 +30,9 @@ double deadband = 0.1;  //Deadband to prevent micro-movements
 
 
 //Buttons / Switches
-const int directionPins[4] = { 34, 33, 35, 39 };
-bool directionStates[4];  //Array to store button states
-const int togglePin = 100;
+const int leftPin = 19;
+const int rightPin = 18;
+const int togglePin = 26;
 
 
 void setup() {
@@ -59,11 +60,10 @@ void setup() {
   Kd = 0.005;
   last_time = 0;
 
-
-  //Servo Button setup
-  for (int i = 0; i < 4; i++) {
-    pinMode(directionPins[i], INPUT);  // Set each button pin as an input
-  }
+  //Manual Control Pin Setup
+  pinMode(togglePin, INPUT);
+  pinMode(leftPin, INPUT);
+  pinMode(rightPin, INPUT);
 }
 
 
@@ -75,29 +75,25 @@ void loop() {
   if (isAutomaticMode) {
     TrackingFunc();
   } else {
-    for (int i = 0; i < 4; i++) {
-    directionStates[i] = digitalRead(directionPins[i]);  // Read each button state
-    if (directionStates[i] == LOW) {                     // If button is LOW
-        switch (i) {
-          case 0:
-            Serial.print("Left ON");
-            xPos += 5;
-            xPos = constrain(xPos, minServoAngle, maxServoAngle);  
-            x_servo.write(xPos); 
-            break;
-          case 1:
-            Serial.print("Right ON");
-            xPos -= 5;
-            xPos = constrain(xPos, minServoAngle, maxServoAngle);  
-            x_servo.write(xPos);      
-            break;
-        } 
+    if (digitalRead(leftPin) == LOW) {           
+      Serial.println("Moving left!");
+      xPos += 5;
+      xPos = constrain(xPos, minServoAngle, maxServoAngle);  
+      Serial.print("xPos (after left): ");
+      Serial.println(xPos);  // Check new xPos value
+      x_servo.write(xPos); 
     }
-  }
-
+    if (digitalRead(rightPin) == LOW) {
+      Serial.println("Moving right!");
+      xPos -= 5;
+      xPos = constrain(xPos, minServoAngle, maxServoAngle); 
+      Serial.print("xPos (after left): ");
+      Serial.println(xPos);  // Check new xPos value 
+      x_servo.write(xPos);      
+    }
+    }
   delay(100);
 }
-
 
 //GridEYE Tracking Function
 void TrackingFunc() {
@@ -251,3 +247,4 @@ void debugFunction(float centerX, double error, double output, int pos, long dt,
   Serial.println(dt);
   Serial.println("------------------------\n");
 }
+
