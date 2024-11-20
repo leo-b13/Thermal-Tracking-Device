@@ -48,10 +48,10 @@ void setup() {
   ESP32PWM::allocateTimer(2);
   ESP32PWM::allocateTimer(3);               //Allow allocation of all timers
   track_servo.setPeriodHertz(50);           // standard 50 hz servo
-  track_servo.attach(servoPin, 544, 2400);  //default values almost (0-180), little more added on 0 side to prevent current draw
+  track_servo.attach(servoPin, 644, 2400);  //default values almost (0-180), little more added on 0 side to prevent current draw
 
   x_servo.setPeriodHertz(50);
-  x_servo.attach(xServoPin, 544, 2400);
+  x_servo.attach(xServoPin, 644, 2400);
 
 
   //PID Variables
@@ -140,29 +140,6 @@ void TrackingFunc() {
 
   //debugFunction(centerX, error, output, pos, dt, current_time);
 }
-
-
-//GridEYE Searching Function
-//void searchFunc() {
-
-  //for (int i = 0; i < 64; i++) {                    //Loop that goes through each pixel and assigns it to the temperature array
-   // tempArray[i] = grideye.getPixelTemperature(i); 
-
-  //once ambien temp done
-  //move to max right angle while scanning
-  //once hit, move to max left angle while scanning
-  //at any time, if temp detected that is ~ >5 degrees ambient, stop function
-  //for (int i = 0; i < 64; i++) {                  
-    //tempArray[i] = grideye.getPixelTemperature(i);
-    //if (tempArray[i] - minTemp) > tempThreshold
-      //Serial.println("Person detected! Switching to tracking mode...");
-      //might need to stop current pos?
-      //break;
-  //}
-
-
-
-//}
 
 
 //PID Error Function
