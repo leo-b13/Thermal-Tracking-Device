@@ -142,29 +142,6 @@ void TrackingFunc() {
 }
 
 
-//GridEYE Searching Function
-//void searchFunc() {
-
-  //for (int i = 0; i < 64; i++) {                    //Loop that goes through each pixel and assigns it to the temperature array
-   // tempArray[i] = grideye.getPixelTemperature(i); 
-
-  //once ambien temp done
-  //move to max right angle while scanning
-  //once hit, move to max left angle while scanning
-  //at any time, if temp detected that is ~ >5 degrees ambient, stop function
-  //for (int i = 0; i < 64; i++) {                  
-    //tempArray[i] = grideye.getPixelTemperature(i);
-    //if (tempArray[i] - minTemp) > tempThreshold
-      //Serial.println("Person detected! Switching to tracking mode...");
-      //might need to stop current pos?
-      //break;
-  //}
-
-
-
-//}
-
-
 //PID Error Function
 double pid(double error) {
   double proportional = error;
