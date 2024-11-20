@@ -48,10 +48,10 @@ void setup() {
   ESP32PWM::allocateTimer(2);
   ESP32PWM::allocateTimer(3);               //Allow allocation of all timers
   track_servo.setPeriodHertz(50);           // standard 50 hz servo
-  track_servo.attach(servoPin, 544, 2400);  //default values almost (0-180), little more added on 0 side to prevent current draw
+  track_servo.attach(servoPin, 644, 2400);  //default values almost (0-180), little more added on 0 side to prevent current draw
 
   x_servo.setPeriodHertz(50);
-  x_servo.attach(xServoPin, 544, 2400);
+  x_servo.attach(xServoPin, 644, 2400);
 
 
   //PID Variables
