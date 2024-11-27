@@ -8,16 +8,16 @@
 //GridEYE Parameters
 GridEYE grideye;      //Initializes sensor
 float tempArray[64];  //Float array to store 64 pixels (since GridEye outputs 8x8 grid). Switch to int type if you want to remove decimal points.
-float minTemp = 20; //Min temperature expected, changed by function later on
+float minTemp = 20;   //Min temperature expected, changed by function later on
 
 //Servo Parameters
 Servo track_servo;
 Servo x_servo;
 int pos = 90;
 int xPos = 90;
-const int servoPin = 2;  //Pin for Servo PWM
-const int xServoPin = 4;  
-int minServoAngle = 5;  // Minimum servo angle
+const int servoPin = 2;
+const int xServoPin = 4;
+int minServoAngle = 5;    // Minimum servo angle, set slightly higher than 0 to prevent excess current draw
 int maxServoAngle = 180;  // Maximum servo angle
 
 
@@ -25,8 +25,8 @@ int maxServoAngle = 180;  // Maximum servo angle
 double Kp, Ki, Kd;
 double dt, last_time;
 double integral, previous, output = 0;
-double setpoint = 4.5;  //Desired center value
-double deadband = 0.1;  //Deadband to prevent micro-movements
+double setpoint = 4.5;   //Desired center value
+double deadband = 0.15;  //Deadband to prevent micro-movements with tracking servo
 
 
 //Buttons / Switches
@@ -55,9 +55,9 @@ void setup() {
 
 
   //PID Variables
-  Kp = 5;
-  Ki = 0.50;
-  Kd = 0.005;
+  Kp = 18;
+  Ki = 5;
+  //Kd = 0.005;
   last_time = 0;
 
   //Manual Control Pin Setup
@@ -68,30 +68,26 @@ void setup() {
 
 
 void loop() {
-
-//read toggle switch -> if in automatic, go to temperature reading lines
   bool isAutomaticMode = digitalRead(togglePin) == HIGH;
 
-  if (isAutomaticMode) {
+  if (isAutomaticMode) {  //If toggle switch is on -> go into automatic, otherwise go into manual control
     TrackingFunc();
   } else {
-    if (digitalRead(leftPin) == LOW) {           
-      Serial.println("Moving left!");
+    if (digitalRead(leftPin) == LOW) {
       xPos += 5;
-      xPos = constrain(xPos, minServoAngle, maxServoAngle);  
+      xPos = constrain(xPos, minServoAngle, maxServoAngle);
       Serial.print("xPos (after left): ");
-      Serial.println(xPos);  // Check new xPos value
-      x_servo.write(xPos); 
+      Serial.println(xPos);
+      x_servo.write(xPos);
     }
     if (digitalRead(rightPin) == LOW) {
-      Serial.println("Moving right!");
       xPos -= 5;
-      xPos = constrain(xPos, minServoAngle, maxServoAngle); 
+      xPos = constrain(xPos, minServoAngle, maxServoAngle);
       Serial.print("xPos (after left): ");
-      Serial.println(xPos);  // Check new xPos value 
-      x_servo.write(xPos);      
+      Serial.println(xPos);
+      x_servo.write(xPos);
     }
-    }
+  }
   delay(100);
 }
 
@@ -99,8 +95,8 @@ void loop() {
 void TrackingFunc() {
 
   minTemp = minFunc();
-  Serial.print("Min temp:");
-  Serial.println(minTemp);
+  //Serial.print("Min temp:");
+  //Serial.println(minTemp);
 
   float totalTemp = 0;
   float tempX = 0;
@@ -126,19 +122,28 @@ void TrackingFunc() {
 
 
   //Change in T calculation (for integral)
-  unsigned long current_time = millis();             //Returns the number of milliseconds passed since the Arduino board began running the current program
+  unsigned long current_time = millis();      //Returns the number of milliseconds passed since the Arduino board began running the current program
   dt = (current_time - last_time) / 1000.00;  //Calculates change in time in seconds
   last_time = current_time;                   //Sets previous time for next iteration
+
+
+  //Integral wind-up preventation when at max/min servo angles
+  if (pos == maxServoAngle || output == minServoAngle) {
+    integral = 0;
+  }
 
 
   //Error + Servo Writing
   double error = centerX - setpoint;                   //Calculates error (distance between current centerX temp and setpoint, which is usually 4.5 (middle))
   output = pid(error);                                 //Goes to PID function to calculate error output
   pos += output;                                       //Calculates position for servo using 90 (middle) + error output
-  pos = constrain(pos, minServoAngle, maxServoAngle);  //Constrains position variable between 0 and 180
-  track_servo.write(pos);                              //Writes position to servo
+  pos = constrain(pos, minServoAngle, maxServoAngle);  //Constrains position variable between 0 and 180 to prevent stress on motor
 
-  //debugFunction(centerX, error, output, pos, dt, current_time);
+
+
+  track_servo.write(pos);  //Writes position to servo
+
+  debugFunction(centerX, error, output, pos, dt, current_time);  //Debug function, comment out/in
 }
 
 
@@ -146,7 +151,8 @@ void TrackingFunc() {
 double pid(double error) {
   double proportional = error;
 
-  if (abs(error) > deadband) {
+  if (abs(error) > deadband) {  //Reduction stuff for when within deadband (close to error) to prevent excess jittering
+    //proportional *= 0.5;
     integral += error * dt;
     integral = constrain(integral, -20, 20);
   } else {
@@ -157,9 +163,10 @@ double pid(double error) {
   previous = error;
   derivative = constrain(derivative, -20, 20);
 
+  derivative = 0;
   double output = (Kp * proportional) + (Ki * integral) + (Kd * derivative);
 
-  //pidPrintFunction(double proportional, double integral, double derivative)
+  pidPrintFunction(proportional, integral, derivative);
 
   return output;
 }
@@ -189,7 +196,7 @@ void tempPrintFunction(int i) {
     Serial.println();      //Start a new line (Since i goes up to 64, makes 8x8 grid of data in monitor)
   }
 
-  if ((i + 1) ==  64) {
+  if ((i + 1) == 64) {
     Serial.println();  //Prints empty lines in serial monitor to make each dataset visually distinct
     Serial.println();
   }
