@@ -55,8 +55,8 @@ void setup() {
 
 
   //PID Variables
-  Kp = 18;
-  Ki = 5;
+  Kp = 10;
+  Ki = 1;
   //Kd = 0.005;
   last_time = 0;
 
@@ -88,7 +88,7 @@ void loop() {
       x_servo.write(xPos);
     }
   }
-  delay(100);
+  delay(10);
 }
 
 //GridEYE Tracking Function
@@ -127,19 +127,11 @@ void TrackingFunc() {
   last_time = current_time;                   //Sets previous time for next iteration
 
 
-  //Integral wind-up preventation when at max/min servo angles
-  if (pos == maxServoAngle || output == minServoAngle) {
-    integral = 0;
-  }
-
-
   //Error + Servo Writing
   double error = centerX - setpoint;                   //Calculates error (distance between current centerX temp and setpoint, which is usually 4.5 (middle))
   output = pid(error);                                 //Goes to PID function to calculate error output
-  pos += output;                                       //Calculates position for servo using 90 (middle) + error output
+  pos += output;                                       
   pos = constrain(pos, minServoAngle, maxServoAngle);  //Constrains position variable between 0 and 180 to prevent stress on motor
-
-
 
   track_servo.write(pos);  //Writes position to servo
 
@@ -151,11 +143,16 @@ void TrackingFunc() {
 double pid(double error) {
   double proportional = error;
 
-  if (abs(error) > deadband) {  //Reduction stuff for when within deadband (close to error) to prevent excess jittering
+  if (abs(error) > deadband) {  //Reduction things for when within deadband (close to error) to prevent excess jittering
     //proportional *= 0.5;
     integral += error * dt;
     integral = constrain(integral, -20, 20);
   } else {
+    integral = 0;
+  }
+
+  //Integral wind-up preventation when at max/min servo angles
+  if (pos >= maxServoAngle || output <= minServoAngle) {
     integral = 0;
   }
 
@@ -231,4 +228,3 @@ void debugFunction(float centerX, double error, double output, int pos, long dt,
   Serial.println(dt);
   Serial.println("------------------------\n");
 }
-
