@@ -56,7 +56,7 @@ void setup() {
 
   //PID Variables
   Kp = 10;
-  Ki = 1;
+  //Ki = 1;
   //Kd = 0.005;
   last_time = 0;
 
@@ -160,6 +160,7 @@ double pid(double error) {
   previous = error;
   derivative = constrain(derivative, -20, 20);
 
+  integral = 0;
   derivative = 0;
   double output = (Kp * proportional) + (Ki * integral) + (Kd * derivative);
 
