@@ -30,9 +30,16 @@ double deadband = 0.15;  //Deadband to prevent micro-movements with tracking ser
 
 
 //Buttons / Switches
-const int leftPin = 19;
-const int rightPin = 18;
-const int togglePin = 26;
+const int leftPin = 26;
+const int rightPin = 17;
+const int togglePin = 18;
+const int sleep_pin = 16;
+//#define SLEEP_PIN 0
+
+
+//LED
+const int led1 = 19;
+const int led2 = 5;
 
 
 void setup() {
@@ -41,6 +48,7 @@ void setup() {
   grideye.begin();
 
   Serial.begin(115200);
+ 
 
   //Servo Setup
   ESP32PWM::allocateTimer(0);
@@ -56,7 +64,7 @@ void setup() {
 
   //PID Variables
   Kp = 10;
-  //Ki = 1;
+  //Ki = 0.5;
   //Kd = 0.005;
   last_time = 0;
 
@@ -74,14 +82,14 @@ void loop() {
     TrackingFunc();
   } else {
     if (digitalRead(leftPin) == LOW) {
-      xPos += 5;
+      xPos += 1;
       xPos = constrain(xPos, minServoAngle, maxServoAngle);
       Serial.print("xPos (after left): ");
       Serial.println(xPos);
       x_servo.write(xPos);
     }
     if (digitalRead(rightPin) == LOW) {
-      xPos -= 5;
+      xPos -= 1;
       xPos = constrain(xPos, minServoAngle, maxServoAngle);
       Serial.print("xPos (after left): ");
       Serial.println(xPos);
@@ -98,13 +106,15 @@ void TrackingFunc() {
   //Serial.print("Min temp:");
   //Serial.println(minTemp);
 
+
   float totalTemp = 0;
   float tempX = 0;
   float tempY = 0;  //Resets temperature variables, placed before loop to initialize before new data gathered
 
   for (int i = 0; i < 64; i++) {                    //Loop that goes through each pixel and assigns it to the temperature array
+    Serial.print(grideye.getPixelTemperature(i));
+    Serial.print(",");
     tempArray[i] = grideye.getPixelTemperature(i);  //Read pixel value at current i, store it in temperature array
-
     //tempPrintFunction(i); //To print GridEYE's temperature data, comment in/out this calling function
 
     int x = (i % 8) + 1;
@@ -117,6 +127,7 @@ void TrackingFunc() {
     tempY += y * temp;
   }
 
+  Serial.println();
   float centerX = tempX / totalTemp;
   float centerY = tempY / totalTemp;  //Gets x and y center temperature
 
@@ -132,10 +143,8 @@ void TrackingFunc() {
   output = pid(error);                                 //Goes to PID function to calculate error output
   pos += output;                                       
   pos = constrain(pos, minServoAngle, maxServoAngle);  //Constrains position variable between 0 and 180 to prevent stress on motor
-
-  track_servo.write(pos);  //Writes position to servo
-
-  debugFunction(centerX, error, output, pos, dt, current_time);  //Debug function, comment out/in
+  track_servo.write(pos); 
+  //debugFunction(centerX, error, output, pos, dt, current_time);  //Debug function, comment out/in
 }
 
 
@@ -164,7 +173,7 @@ double pid(double error) {
   derivative = 0;
   double output = (Kp * proportional) + (Ki * integral) + (Kd * derivative);
 
-  pidPrintFunction(proportional, integral, derivative);
+  //pidPrintFunction(proportional, integral, derivative);
 
   return output;
 }
@@ -229,3 +238,4 @@ void debugFunction(float centerX, double error, double output, int pos, long dt,
   Serial.println(dt);
   Serial.println("------------------------\n");
 }
+
