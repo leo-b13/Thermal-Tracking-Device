@@ -1,6 +1,6 @@
 
 
-+Tracking Device Processing is code to be used in the Processing Application to display the data from the GridEYE. 
+-Tracking Device Processing is code to be used in the Processing Application to display the data from the GridEYE. 
   -This requires serial data so data must be printed in the serial monitor each loop.
   -Sometimes the processing code will not upload due to a NaN error. Just keep trying to upload it (maybe 3-5 times) and it should upload succesfully.
 
