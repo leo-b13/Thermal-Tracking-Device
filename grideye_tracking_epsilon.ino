@@ -63,7 +63,7 @@ void setup() {
 
 
   //PID Variables
-  Kp = 10;
+  Kp = 14;
   //Ki = 0.5;
   //Kd = 0.005;
   last_time = 0;
@@ -143,7 +143,9 @@ void TrackingFunc() {
   output = pid(error);                                 //Goes to PID function to calculate error output
   pos += output;                                       
   pos = constrain(pos, minServoAngle, maxServoAngle);  //Constrains position variable between 0 and 180 to prevent stress on motor
+  xPos = (180 - pos) + 30;
   track_servo.write(pos); 
+  x_servo.write(xPos);
   //debugFunction(centerX, error, output, pos, dt, current_time);  //Debug function, comment out/in
 }
 
