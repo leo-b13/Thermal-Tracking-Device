@@ -32,60 +32,56 @@ void setup() {
 // sequence and after the last line is read, the first 
 // line is executed again.
 void draw() { 
-  
   // When there is a sizeable amount of data on the serial port
   // read everything up to the first linefeed
-  if(myPort.available() > 64){
-  myString = myPort.readStringUntil(13);
+  if (myPort.available() > 64) {
+    myString = myPort.readStringUntil(13);
 
-  // readStringUntil is a non-blocking function and will return null if it can't find the linefeed
-  if(myString == null){
-    return;
-  }
-  
-  // generate an array of strings that contains each of the comma
-  // separated values
-  String splitString[] = splitTokens(myString, ",");
-  
-  // for each of the 64 values, map the temperatures between 20C and 40C
-  // to the blue through red portion of the color space
-  for(int q = 0; q < 64; q++){
-   
-    temps[q] = map(float(splitString[q]), 20, 40, 240, 360);
+    // readStringUntil is a non-blocking function and will return null if it can't find the linefeed
+    if (myString == null) {
+      return;
+    }
     
+    // generate an array of strings that contains each of the comma-separated values
+    String splitString[] = splitTokens(myString, ",");
+    
+    // for each of the 64 values, map the temperatures between 20C and 35C
+    // to the blue through red portion of the color space
+    for (int q = 0; q < 64; q++) {
+      temps[q] = map(float(splitString[q]), 20, 35, 240, 360);
+    }
   }
-  }
-  
-  
+
   // Prepare variables needed to draw our heatmap
   int x = 0;
   int y = 0;
   int i = 0;
-  background(0);   // Clear the screen with a black background
-  
-  
-  // each GridEYE pixel will be represented by a 50px square: 
+  background(0); // Clear the screen with a black background
+
+  // each Grid-EYE pixel will be represented by a 50px square:
   // because 50 x 8 = 400, we draw squares until our y location
   // is 400
-  while(y < 400){
-  
-    
-  // for each increment in the y direction, draw 8 boxes in the 
-  // x direction, creating a 64 pixel matrix
-  while(x < 400){
-  // before drawing each pixel, set our paintcan color to the 
-  // appropriate mapped color value
-  fill(temps[i], 100, 100);
-  rect(x,y,50,50);
-  x = x + 50;
-  i++;
+  while (y < 400) {
+    // Flip the row index: subtract the current row index from 7 (0-based)
+    int flippedRow = 7 - (y / 50);
+
+    // for each increment in the y direction, draw 8 boxes in the
+    // x direction, creating a 64 pixel matrix
+    while (x < 400) {
+      // Calculate the index in the temps array, considering the flipped row
+      i = flippedRow * 8 + (x / 50);
+
+      // Set the color for the current temperature
+      fill(temps[i], 100, 100);
+      rect(x, y, 50, 50);
+      x = x + 50;
+    }
+
+    y = y + 50;
+    x = 0;
   }
-  
-  y = y + 50;
-  x = 0;
-  }
-  
-  // Add a gaussian blur to the canvas in order to create a rough
+
+  // Add a Gaussian blur to the canvas in order to create a rough
   // visual interpolation between pixels.
-  //filter(BLUR,10);
-} 
+  //filter(BLUR, 10);
+}
